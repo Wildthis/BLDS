@@ -1,12 +1,16 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
+from app.services.bert_model import BertModelSingleton
 from infra.make_response import make_response
-
 app = Flask(__name__)
-
+model = BertModelSingleton()
 @app.route('/')
 def home():
     return make_response("Hello, World!")
+@app.route('/predict', methods=['POST'])
+def predict():
+    input_text = request.json
+    return make_response(model.classify(input_text))
 
 @app.route('/api/data', methods=['GET', 'POST'])
 def handle_data():

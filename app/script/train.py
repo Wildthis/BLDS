@@ -48,19 +48,20 @@ def train_model(model, train_loader, dev_loader, optimizer, epochs=3):
         progress_bar = progressbar.ProgressBar().start()
         x = 0
         for batch in train_loader:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            topic_embedding = batch['topic_embedding'].to(device)
-            labels = batch['labels'].to(device)
+            for sample in batch:
+                input_ids = sample['input_ids'].to(device)
+                attention_mask = sample['attention_mask'].to(device)
+                topic_embedding = sample['topic_embedding'].to(device)
+                labels = sample['labels'].to(device)
 
-            optimizer.zero_grad()
-            outputs = model(input_ids, attention_mask, topic_embedding)
-            loss = torch.nn.CrossEntropyLoss()(outputs, labels)
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                outputs = model(input_ids, attention_mask, topic_embedding)
+                loss = torch.nn.CrossEntropyLoss()(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-            total_loss += loss.item()
-            x = x + 1
+                total_loss += loss.item()
+            x += 1
             progress_bar.update(int(x / len(train_loader) * 100))
         progress_bar.finish()
         print(f'Epoch {epoch + 1}, Loss: {total_loss / len(train_loader)}')
@@ -70,15 +71,16 @@ def train_model(model, train_loader, dev_loader, optimizer, epochs=3):
         predictions, true_labels = [], []
         with torch.no_grad():
             for batch in dev_loader:
-                input_ids = batch['input_ids'].to(device)
-                attention_mask = batch['attention_mask'].to(device)
-                topic_embedding = batch['topic_embedding'].to(device)
-                labels = batch['labels'].to(device)
+                for sample in batch:
+                    input_ids = sample['input_ids'].to(device)
+                    attention_mask = sample['attention_mask'].to(device)
+                    topic_embedding = sample['topic_embedding'].to(device)
+                    labels = sample['labels'].to(device)
 
-                outputs = model(input_ids, attention_mask, topic_embedding)
-                logits = outputs
-                predictions.extend(torch.argmax(logits, dim=1).cpu().numpy())
-                true_labels.extend(labels.cpu().numpy())
+                    outputs = model(input_ids, attention_mask, topic_embedding)
+                    logits = outputs
+                    predictions.extend(torch.argmax(logits, dim=1).cpu().numpy())
+                    true_labels.extend(labels.cpu().numpy())
 
         print(f'Validation Accuracy: {accuracy_score(true_labels, predictions)}')
         print(f'Validation F1 Score: {f1_score(true_labels, predictions)}')
@@ -86,4 +88,4 @@ def train_model(model, train_loader, dev_loader, optimizer, epochs=3):
 # 训练模型
 train_model(model, train_loader, dev_loader, optimizer, epochs=1)
 # 保存模型
-torch.save(model.state_dict(), '../models/model.pt')
+torch.save(model.state_dict(), '../../resources/models/model.pt')
