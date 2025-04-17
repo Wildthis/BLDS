@@ -6,12 +6,12 @@ app = Flask(__name__)
 
 @app.errorhandler(404)
 def handle_not_found_error(error):
-    return make_response(status=404, message="Not Found")
+    return make_response(status=False, message="Not Found")
 
 @app.errorhandler(500)
 def handle_internal_server_error(error):
-    return make_response(status=500, message="Internal Server Error")
+    return make_response(status=False, message="Internal Server Error")
 
 @app.errorhandler(Exception)
 def handle_generic_error(error):
-    return make_response(status=500, message=str(error))
+    return make_response(status=False, message=str(error))

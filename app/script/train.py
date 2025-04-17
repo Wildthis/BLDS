@@ -86,6 +86,6 @@ def train_model(model, train_loader, dev_loader, optimizer, epochs=3):
         print(f'Validation F1 Score: {f1_score(true_labels, predictions)}')
 
 # 训练模型
-train_model(model, train_loader, dev_loader, optimizer, epochs=1)
+train_model(model, train_loader, dev_loader, optimizer, epochs=3)
 # 保存模型
 torch.save(model.state_dict(), '../../resources/models/model.pt')

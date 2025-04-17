@@ -1,3 +1,5 @@
+import random
+
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 
@@ -47,34 +49,37 @@ class BertModelSingleton:
         return input_ids, attention_mask, topic_embedding
 
     def classify(self, text):
-        topics = ['race', 'region', 'gender']
-        device = self.device
-
-        # 预处理文本
-        inputs = self.tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
-        input_ids = inputs['input_ids'].to(device)
-        attention_mask = inputs['attention_mask'].to(device)
-
-        for topic in topics:
-            topic_embedding = torch.zeros(5)  # 创建一维张量
-            if topic == 'race':
-                topic_embedding[0] = 1
-            elif topic == 'region':
-                topic_embedding[1] = 1
-            elif topic == 'gender':
-                topic_embedding[2] = 1
-            else:
-                topic_embedding[4] = 1
-
-            # 将一维张量转换为二维张量
-            topic_embedding = topic_embedding.unsqueeze(0).to(device)
-
-            # 将数据输入模型
-            with torch.no_grad():  # 关闭梯度计算
-                logits = self.model(input_ids, attention_mask, topic_embedding)
-
-            # 应用 softmax 函数，将 logits 转换为概率分布
-            probabilities = torch.nn.functional.softmax(logits, dim=1)
-            predicted_label = torch.argmax(probabilities, dim=1)
-
-            print(f"topic: {topic}, probabilities:{probabilities}, Predicted label: {predicted_label.item()}")
+        topics = ['race', 'region', 'gender','false']
+        return random.choice(topics)
+        # topics = ['race', 'region', 'gender']
+        # topics = ['race', 'region', 'gender']
+        # device = self.device
+        #
+        # # 预处理文本
+        # inputs = self.tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
+        # input_ids = inputs['input_ids'].to(device)
+        # attention_mask = inputs['attention_mask'].to(device)
+        #
+        # for topic in topics:
+        #     topic_embedding = torch.zeros(5)  # 创建一维张量
+        #     if topic == 'race':
+        #         topic_embedding[0] = 1
+        #     elif topic == 'region':
+        #         topic_embedding[1] = 1
+        #     elif topic == 'gender':
+        #         topic_embedding[2] = 1
+        #     else:
+        #         topic_embedding[4] = 1
+        #
+        #     # 将一维张量转换为二维张量
+        #     topic_embedding = topic_embedding.unsqueeze(0).to(device)
+        #
+        #     # 将数据输入模型
+        #     with torch.no_grad():  # 关闭梯度计算
+        #         logits = self.model(input_ids, attention_mask, topic_embedding)
+        #
+        #     # 应用 softmax 函数，将 logits 转换为概率分布
+        #     probabilities = torch.nn.functional.softmax(logits, dim=1)
+        #     predicted_label = torch.argmax(probabilities, dim=1)
+        #
+        #     print(f"topic: {topic}, probabilities:{probabilities}, Predicted label: {predicted_label.item()}")
