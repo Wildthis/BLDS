@@ -22,12 +22,13 @@ class BertModelSingleton:
         config = ConfigManager.get_config('torch').get('device')
         model = BertBiasClassifier(num_labels=2).to(config)
         # 加载保存的模型权重
-        model.load_state_dict(torch.load('../resources/models/model.pt'))
+        model.load_state_dict(torch.load('./resources/models/model.pt'))
         model.eval()  # 设置为评估模式
         self.model = model
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         self.model.eval()
+        print('模型加载完毕')
 
     def preprocess_text(self, text, topic, max_length=512):
         device = self.device
@@ -49,37 +50,48 @@ class BertModelSingleton:
         return input_ids, attention_mask, topic_embedding
 
     def classify(self, text):
-        topics = ['race', 'region', 'gender','false']
-        return random.choice(topics)
-        # topics = ['race', 'region', 'gender']
-        # topics = ['race', 'region', 'gender']
-        # device = self.device
-        #
-        # # 预处理文本
-        # inputs = self.tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
-        # input_ids = inputs['input_ids'].to(device)
-        # attention_mask = inputs['attention_mask'].to(device)
-        #
-        # for topic in topics:
-        #     topic_embedding = torch.zeros(5)  # 创建一维张量
-        #     if topic == 'race':
-        #         topic_embedding[0] = 1
-        #     elif topic == 'region':
-        #         topic_embedding[1] = 1
-        #     elif topic == 'gender':
-        #         topic_embedding[2] = 1
-        #     else:
-        #         topic_embedding[4] = 1
-        #
-        #     # 将一维张量转换为二维张量
-        #     topic_embedding = topic_embedding.unsqueeze(0).to(device)
-        #
-        #     # 将数据输入模型
-        #     with torch.no_grad():  # 关闭梯度计算
-        #         logits = self.model(input_ids, attention_mask, topic_embedding)
-        #
-        #     # 应用 softmax 函数，将 logits 转换为概率分布
-        #     probabilities = torch.nn.functional.softmax(logits, dim=1)
-        #     predicted_label = torch.argmax(probabilities, dim=1)
-        #
-        #     print(f"topic: {topic}, probabilities:{probabilities}, Predicted label: {predicted_label.item()}")
+        try:
+            # 预处理文本
+            inputs = self.tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
+            input_ids = inputs['input_ids'].to(self.device)
+            attention_mask = inputs['attention_mask'].to(self.device)
+            
+            # 对每种偏见类型进行检测
+            topics = ['race', 'region', 'gender', 'false']
+            max_prob = 0
+            predicted_topic = 'false'
+            
+            for topic in topics:
+                # 创建主题嵌入
+                topic_embedding = torch.zeros(5).to(self.device)
+                if topic == 'race':
+                    topic_embedding[0] = 1
+                elif topic == 'region':
+                    topic_embedding[1] = 1
+                elif topic == 'gender':
+                    topic_embedding[2] = 1
+                else:
+                    topic_embedding[4] = 1
+                
+                # 将一维张量转换为二维张量
+                topic_embedding = topic_embedding.unsqueeze(0)
+                
+                # 进行预测
+                with torch.no_grad():
+                    logits = self.model(input_ids, attention_mask, topic_embedding)
+                    probabilities = torch.nn.functional.softmax(logits, dim=1)
+                    prob = probabilities[0][1].item()  # 获取偏见概率
+                    
+                    if prob > max_prob:
+                        max_prob = prob
+                        predicted_topic = topic
+            
+            # 如果最大概率小于阈值，则认为是无偏见
+            if max_prob < 0.5:
+                predicted_topic = 'false'
+            
+            return predicted_topic
+            
+        except Exception as e:
+            print(f"偏见检测出错: {str(e)}")
+            return 'false'

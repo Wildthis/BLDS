@@ -4,7 +4,7 @@ import threading
 
 class ConfigManager:
     _config = None
-    _config_path = '../resources/application.yml'  # 默认配置文件路径
+    _config_path = './resources/application.yml'  # 默认配置文件路径
     _lock = threading.Lock()
     _initialized = False
 
